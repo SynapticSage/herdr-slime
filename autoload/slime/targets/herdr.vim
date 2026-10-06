@@ -7,7 +7,12 @@ function! slime#targets#herdr#config() abort
     call s:resolve_direction(b:slime_config)
   endif
   let b:slime_config["session"] = input("herdr session (empty = current): ", b:slime_config["session"])
-  let pane_id = input("herdr pane id or direction: ", b:slime_config["pane_id"], "custom,slime#targets#herdr#pane_names")
+  let panes = s:show_ids(b:slime_config, s:list_panes(b:slime_config), {})
+  try
+    let pane_id = input("herdr pane id or direction: ", b:slime_config["pane_id"], "custom,slime#targets#herdr#pane_names")
+  finally
+    call s:hide_ids(b:slime_config, panes)
+  endtry
   " completion entries look like 'w1:p2 label ...'
   if pane_id =~ '\s'
     let pane_id = split(pane_id)[0]
@@ -87,37 +92,109 @@ endfunction
 
 function! slime#targets#herdr#pane_names(A,L,P)
   let config = exists("b:slime_config") ? b:slime_config : {}
-  let output = s:herdr(config, "pane list", [])
-  if empty(output)
-    return join(s:directions, "\n")
-  endif
-  try
-    let panes = json_decode(output)["result"]["panes"]
-  catch
-    return join(s:directions, "\n")
-  endtry
-  let self_pane = s:caller_pane(config)
-  let names = []
-  for pane in panes
-    let parts = [pane["pane_id"]]
-    let name = get(pane, "label", get(pane, "display_agent", get(pane, "terminal_title_stripped", get(pane, "title", ""))))
-    if !empty(name)
-      call add(parts, name)
-    endif
-    if has_key(pane, "cwd")
-      call add(parts, fnamemodify(pane["cwd"], ":~"))
-    endif
-    if pane["pane_id"] ==# self_pane
-      call add(parts, "(this vim)")
-    elseif pane["focused"]
-      call add(parts, "(focused)")
-    endif
-    call add(names, join(parts))
-  endfor
+  let names = map(s:list_panes(config), "s:describe(config, v:val)")
   return join(names + s:directions, "\n")
 endfunction
 
+" label every pane's border with a key and its id, then pick the target by key
+function! slime#targets#herdr#pick() abort
+  if !slime#targets#herdr#ValidEnv()
+    return
+  endif
+  if !exists("b:slime_config")
+    let b:slime_config = {"session": "", "pane_id": ""}
+  endif
+  let config = b:slime_config
+  let self_pane = s:caller_pane(config)
+  let choices = {}
+  let lines = []
+  let panes = s:list_panes(config)
+  for pane in panes
+    if pane["pane_id"] !=# self_pane && len(choices) < len(s:pick_keys)
+      let key = s:pick_keys[len(choices)]
+      let choices[key] = pane["pane_id"]
+      call add(lines, "[" . key . "] " . s:describe(config, pane))
+    endif
+  endfor
+  if empty(choices)
+    call s:error("herdr: no other pane to pick")
+    return
+  endif
+  call s:show_ids(config, panes, choices)
+  try
+    redraw
+    echo join(lines, "\n") . "\nslime target pane (<Esc> cancels): "
+    let key = getchar()
+    let key = type(key) == v:t_number ? nr2char(key) : key
+  finally
+    call s:hide_ids(config, panes)
+  endtry
+  redraw
+  if !has_key(choices, key)
+    echo ""
+    return
+  endif
+  let config["pane_id"] = choices[key]
+  silent! call remove(config, "pane_direction")
+  echo "slime target: " . choices[key]
+endfunction
+
+" -------------------------------------------------
+
 let s:directions = ["left", "right", "up", "down"]
+let s:pick_keys = split("123456789abcdefghijklmnopqrstuvwxyz", '\zs')
+
+" titles expire on their own, so a killed vim never leaves them behind
+let s:id_source = "herdr-slime"
+let s:id_ttl_ms = 30000
+
+function! s:list_panes(config)
+  let output = s:herdr(a:config, "pane list", [])
+  try
+    return json_decode(output)["result"]["panes"]
+  catch
+    return []
+  endtry
+endfunction
+
+function! s:describe(config, pane)
+  let parts = [a:pane["pane_id"]]
+  let name = get(a:pane, "label", get(a:pane, "display_agent", get(a:pane, "terminal_title_stripped", "")))
+  if !empty(name)
+    call add(parts, name)
+  endif
+  if has_key(a:pane, "cwd")
+    call add(parts, fnamemodify(a:pane["cwd"], ":~"))
+  endif
+  if a:pane["pane_id"] ==# s:caller_pane(a:config)
+    call add(parts, "(this vim)")
+  elseif a:pane["focused"]
+    call add(parts, "(focused)")
+  endif
+  return join(parts)
+endfunction
+
+" herdr draws a pane's metadata title on its border, ahead of its label;
+" choices maps pick keys to pane ids
+function! s:show_ids(config, panes, choices)
+  let keys = {}
+  for [key, pane_id] in items(a:choices)
+    let keys[pane_id] = key
+  endfor
+  for pane in a:panes
+    let title = has_key(keys, pane["pane_id"]) ? "[" . keys[pane["pane_id"]] . "] " : ""
+    let title .= pane["pane_id"]
+    call s:herdr(a:config, "pane report-metadata %s --source %s --title %s --ttl-ms %s",
+          \ [pane["pane_id"], s:id_source, title, s:id_ttl_ms])
+  endfor
+  return a:panes
+endfunction
+
+function! s:hide_ids(config, panes)
+  for pane in a:panes
+    call s:herdr(a:config, "pane report-metadata %s --source %s --clear-title", [pane["pane_id"], s:id_source])
+  endfor
+endfunction
 
 " text goes through stdin, not the vim command line, so newlines and escape bytes
 " survive any 'shell'; $(cat; printf x) keeps trailing newlines intact

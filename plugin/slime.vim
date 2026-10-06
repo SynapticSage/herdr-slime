@@ -8,6 +8,7 @@ let g:loaded_slime = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 command -bar -nargs=0 SlimeConfig call slime#config()
+command -bar -nargs=0 SlimePickPane call slime#pick_pane()
 command -range -bar -nargs=0 SlimeSend call slime#send_range(<line1>, <line2>)
 command -nargs=+ SlimeSend1 call slime#send(<q-args> . "\r")
 command -nargs=+ SlimeSend0 call slime#send(<args>)
@@ -20,6 +21,7 @@ noremap <unique> <script> <silent> <Plug>SlimeLineSend :<c-u>call slime#send_lin
 noremap <unique> <script> <silent> <Plug>SlimeMotionSend <SID>Operator
 noremap <unique> <script> <silent> <Plug>SlimeParagraphSend <SID>Operatorip
 noremap <unique> <script> <silent> <Plug>SlimeConfig :<c-u>SlimeConfig<cr>
+noremap <unique> <script> <silent> <Plug>SlimePickPane :<c-u>SlimePickPane<cr>
 noremap <unique> <script> <silent> <Plug>SlimeSendCell :<c-u>call slime#send_cell()<cr>
 
 if !exists("g:slime_no_mappings") || !g:slime_no_mappings
@@ -33,6 +35,10 @@ if !exists("g:slime_no_mappings") || !g:slime_no_mappings
 
   if !hasmapto('<Plug>SlimeConfig', 'n')
     nmap <c-c>v <Plug>SlimeConfig
+  endif
+
+  if !hasmapto('<Plug>SlimePickPane', 'n')
+    nmap <c-c>p <Plug>SlimePickPane
   endif
 endif
 

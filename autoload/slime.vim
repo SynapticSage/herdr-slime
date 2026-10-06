@@ -173,6 +173,17 @@ function! slime#config() abort
   call inputrestore()
 endfunction
 
+function! slime#pick_pane() abort
+  let fn = "slime#targets#" . slime#config#resolve("target") . "#pick"
+  " exists() doesn't load autoload functions, so load the target first
+  execute "runtime autoload/slime/targets/" . slime#config#resolve("target") . ".vim"
+  if !exists("*" . fn)
+    echohl ErrorMsg | echomsg "slime: target " . slime#config#resolve("target") . " has no pane picker" | echohl None
+    return
+  endif
+  call call(fn, [])
+endfunction
+
 " delegation
 function! s:SlimeDispatchValidate(name, ...)
   " using try catch because exists() doesn't detect autoload functions that aren't yet loaded

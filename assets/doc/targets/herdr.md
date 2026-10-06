@@ -22,6 +22,25 @@ herdr pane id or direction
     You can also enter `left`, `right`, `up` or `down` to target the pane
     next to vim (resolved with `herdr pane neighbor`).
 
+### finding pane ids
+
+Press `<C-c>p` (or run `:SlimePickPane`) to label every pane with a key and its
+id, like `[2] w1:p3`, then press that key to make the pane slime's target.
+`<Esc>` cancels. The same list is shown in vim, so panes in other tabs or
+workspaces can be picked too. While `:SlimeConfig` asks for the pane id, every
+pane shows its id the same way.
+
+The labels are drawn on pane borders, which herdr only shows around split
+panes by default. To also see them on a pane that fills its tab, set
+`pane_borders = "always"` under `[ui]` in herdr's config. Labels are cleared
+when you pick, and expire on their own after 30 seconds if vim goes away.
+
+To use another key:
+
+```vim
+nmap <leader>sp <Plug>SlimePickPane
+```
+
 You can configure the defaults for these options. If you generally run vim in
 a split herdr tab with a REPL to the right it could look like this:
 

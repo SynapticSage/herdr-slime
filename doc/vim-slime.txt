@@ -395,6 +395,14 @@ pane direction to "right".~
 >
 	let g:slime_default_config = {"pane_direction": "right"}
 <
+						*:SlimePickPane* *<c-c>p*
+<c-c>p			Label every herdr pane with a key and its id, then
+			press the key to make that pane the target. <Esc>
+			cancels. :SlimeConfig also shows each pane's id while
+			it asks for one. Labels are drawn on pane borders; set
+			pane_borders = "always" in herdr's [ui] config to see
+			them on unsplit panes too.
+
 herdr honors |g:slime_bracketed_paste|.
 
 ==============================================================================
