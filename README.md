@@ -50,6 +50,7 @@ Many targets are supported, check their documentation for details:
 
 - [conemu](assets/doc/targets/conemu.md)
 - [dtach](assets/doc/targets/dtach.md)
+- [herdr](assets/doc/targets/herdr.md)
 - [kitty](assets/doc/targets/kitty.md)
 - [neovim](assets/doc/targets/neovim.md)
 - [screen](assets/doc/targets/screen.md) — _default_

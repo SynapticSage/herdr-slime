@@ -31,6 +31,7 @@ benefits of using Vim (familiar environment, syntax highlighting, persistence
 11. vimterminal Configuration		|slime-vimterminal|
 12. Slime Configuration			|slime-configuration|
 13. Slime Requirements			|slime-requirements|
+14. herdr Configuration			|slime-herdr|
 
 ==============================================================================
 1. Slime Usage 					*slime-usage*
@@ -368,5 +369,33 @@ used for completion of screen sessions.  whimrepl does not require any
 executables, only that 'lein whimrepl' was used to start the Leiningen REPL.
 
 ==============================================================================
+14. herdr Configuration 			*slime-herdr*
 
+herdr is not the default, to use it you will have to add this line to your
+|.vimrc|:
+>
+	let g:slime_target = "herdr"
+<
+When you invoke vim-slime for the first time (see below), you will be prompted
+for more configuration.
+
+herdr session~
+
+The herdr session holding the target pane. Leave it empty to use the session
+vim runs in, see e.g. "herdr session list" for other names.
+
+herdr pane id or direction~
+
+The id of the target pane, like "w1:p2". Press <Tab> to complete from
+"herdr pane list", or see the value of $HERDR_PANE_ID in the target pane.
+"left", "right", "up" or "down" target the pane next to vim.
+
+If you generally run vim to the left of your REPL, you could set the default
+pane direction to "right".~
+>
+	let g:slime_default_config = {"pane_direction": "right"}
+<
+herdr honors |g:slime_bracketed_paste|.
+
+==============================================================================
  vim:tw=78:ts=8:ft=help:norl:
